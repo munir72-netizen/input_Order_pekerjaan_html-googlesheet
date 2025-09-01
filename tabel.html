@@ -4,24 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tabel Data Order</title>
+
     <!-- Bootstrap CSS -->
     <link
-      rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    />
-    <!-- SweetAlert2 CSS -->
-    <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.min.css"
     />
+    <!-- DataTables CSS -->
+    <link
+      href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Hover efek warna info */
+      #orderTable tbody tr:hover {
+        background-color: var(--bs-info) !important;
+        color: white;
+      }
+    </style>
   </head>
   <body class="bg-light">
     <div class="container-fluid bg-white">
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-3">
         <div class="container">
-          <a class="navbar-brand fw-bold text-primary" href="index.html"
-            >Order Pekerjaan</a
+          <a class="navbar-brand fw-bold text-primary" href="#">Order Pekerjaan</a>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNavDropdown"
+            aria-controls="navbarNavDropdown"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
           >
+            <span class="navbar-toggler-icon"></span>
+          </button>
           <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ms-auto">
               <li class="nav-item">
@@ -36,10 +54,17 @@
       </nav>
     </div>
 
-    <div class="container py-4">
+    <div class="container py-5">
       <h3 class="mb-4 text-primary">Tabel Data Order</h3>
-      <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
+      <a href="input.html">
+        <button class="btn btn-primary mb-3">+ Tambah Data</button>
+      </a>
+      <div class="table-responsive bg-white p-3 rounded shadow-sm">
+        <table
+          id="orderTable"
+          class="table table-striped table-hover table-bordered"
+          style="width: 100%"
+        >
           <thead class="table-primary">
             <tr>
               <th>No</th>
@@ -48,123 +73,62 @@
               <th>Kerusakan</th>
               <th>Proses</th>
               <th>Keterangan</th>
-              <th>Action</th>
             </tr>
           </thead>
-          <tbody id="data-body"></tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>
 
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.all.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
       const scriptURL =
         "https://script.google.com/macros/s/AKfycbzxDlf3XELJ77QBrT36Iot9SkIp-MwQaFIINHsa9NNJEQsH8WyCJi9UFrKc6Z93QvY1/exec";
 
-      // Ambil data dari Google Sheet
       async function loadData() {
         try {
-          const res = await fetch(scriptURL + "?action=get");
-          const rows = await res.json();
+          const res = await fetch(scriptURL);
+          const result = await res.json();
 
-          let tbody = "";
-          rows.slice(1).forEach((row, i) => {
-            tbody += `<tr>
-              <td>${i + 1}</td>
-              <td>${row[1]}</td>
-              <td>${row[2]}</td>
-              <td>${row[3]}</td>
-              <td>${row[4]}</td>
-              <td>${row[5]}</td>
-              <td>
-                <button class="btn btn-sm btn-info me-2" onclick="editStatus(${
-                  i + 2
-                }, '${row[4]}')">Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteRow(${
-                  i + 2
-                })">Delete</button>
-              </td>
-            </tr>`;
-          });
-          document.getElementById("data-body").innerHTML = tbody;
+          if (result.status === "success") {
+            const data = result.data;
+            const tbody = document.querySelector("#orderTable tbody");
+            tbody.innerHTML = "";
+
+            // looping data (descending: data terbaru di atas)
+            data.reverse().forEach((row, index) => {
+              // row = [tgl_input, tanggal_order, nama_pengorder, kerusakan, proses, keterangan]
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${row[1]}</td>
+                <td>${row[2]}</td>
+                <td>${row[3]}</td>
+                <td>${row[4]}</td>
+                <td>${row[5]}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+
+            // inisialisasi DataTable setelah data dimasukkan
+            $("#orderTable").DataTable({
+              order: [[0, "desc"]], // urut No desc
+              destroy: true, // supaya bisa re-init tanpa error
+              language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
+              },
+            });
+          }
         } catch (err) {
-          Swal.fire("Error", "Gagal memuat data: " + err.message, "error");
+          console.error("Gagal load data:", err);
         }
-      }
-
-      // Edit status proses
-      function editStatus(row, currentStatus) {
-        Swal.fire({
-          title: "Ubah Status",
-          input: "select",
-          inputOptions: {
-            Selesai: "Selesai",
-            Proses: "Proses",
-            Pending: "Pending",
-          },
-          inputValue: currentStatus,
-          showCancelButton: true,
-          confirmButtonText: "Simpan",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            fetch(scriptURL, {
-              method: "POST",
-              body: new URLSearchParams({
-                action: "update",
-                row: row,
-                proses: result.value,
-              }),
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.status === "success") {
-                  Swal.fire("Berhasil!", data.message, "success");
-                  loadData();
-                } else {
-                  Swal.fire("Error", data.message, "error");
-                }
-              })
-              .catch((err) =>
-                Swal.fire("Error", "Gagal update: " + err.message, "error")
-              );
-          }
-        });
-      }
-
-      // Hapus data
-      function deleteRow(row) {
-        Swal.fire({
-          title: "Yakin hapus data ini?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Ya, hapus!",
-          cancelButtonText: "Batal",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            fetch(scriptURL, {
-              method: "POST",
-              body: new URLSearchParams({
-                action: "delete",
-                row: row,
-              }),
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.status === "success") {
-                  Swal.fire("Berhasil!", data.message, "success");
-                  loadData();
-                } else {
-                  Swal.fire("Error", data.message, "error");
-                }
-              })
-              .catch((err) =>
-                Swal.fire("Error", "Gagal hapus: " + err.message, "error")
-              );
-          }
-        });
       }
 
       loadData();
