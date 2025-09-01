@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <title>Tabel dari Google Sheet</title>
@@ -44,9 +44,7 @@
               <li class="nav-item">
                 <a class="nav-link" href="tabel.html">Tabel</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Pricing</a>
-              </li>
+              <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
               <li class="nav-item dropdown">
                 <a
                   class="nav-link dropdown-toggle"
@@ -74,34 +72,35 @@
         </div>
       </nav>
     </div>
+
     <div class="container py-4">
       <a href="input.html">
         <button class="btn btn-primary mb-3">Input Data</button>
       </a>
       <h3 class="mb-4">Tabel dari Google Sheet</h3>
-      <div class="table-responsive">
+
+      <!-- Loader -->
+      <div id="loader" class="text-center my-5">
+        <div
+          class="spinner-border text-primary"
+          role="status"
+          style="width: 3rem; height: 3rem"
+        >
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="mt-2">Memuat data...</div>
+      </div>
+
+      <!-- Container tabel -->
+      <div class="table-responsive" style="display: none" id="tableContainer">
         <table
           id="sheetTable"
           class="table table-striped table-bordered"
           style="width: 100%"
         ></table>
       </div>
-       <!-- Loader -->
-    <div id="loader" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <div class="mt-2">Memuat data...</div>
     </div>
-    <div class="table-responsive" style="display:none;" id="tableContainer">
-      <table
-        id="sheetTable"
-        class="table table-striped table-bordered"
-        style="width: 100%"
-      ></table>
-    </div>
-  </div>
-    </div>
+
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <!-- Bootstrap JS Bundle -->
@@ -111,10 +110,10 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.all.min.js"></script>
-    <!-- ...script imports... -->
+
     <script>
       const scriptUrl =
-        "https://script.google.com/macros/s/AKfycbzxDlf3XELJ77QBrT36Iot9SkIp-MwQaFIINHsa9NNJEQsH8WyCJi9UFrKc6Z93QvY1/exec";
+        "https://script.google.com/macros/s/AKfycbyRSK82g1PNKhXcwxkctOS5SmeaVM5bzLvP7QMKlxrUS8bquGrXnTNe2nfc3PzEg5kJ/exec";
 
       function formatDate(dateStr) {
         if (!dateStr) return "";
@@ -172,13 +171,13 @@
                 tbody += `<td>${cell}</td>`;
               });
               tbody += `<td>
-              <button class="btn btn-sm btn-info me-2" onclick="editStatus(${
-                i + 2
-              }, '${row[4]}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteRow(${
-                i + 2
-              })">Delete</button>
-            </td>`;
+                <button class="btn btn-sm btn-info me-2" onclick="editStatus(${
+                  i + 2
+                }, '${row[4]}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteRow(${
+                  i + 2
+                })">Delete</button>
+              </td>`;
               tbody += "</tr>";
             });
             tbody += "</tbody>";
@@ -198,8 +197,78 @@
           });
       }
 
-      // ...editStatus & deleteRow functions...
+      // Fungsi Edit Status
+      window.editStatus = function (rowIndex, currentStatus) {
+        Swal.fire({
+          title: "Update Status",
+          input: "select",
+          inputOptions: {
+            Proses: "Proses",
+            Selesai: "Selesai",
+            Pending: "Pending",
+          },
+          inputValue: currentStatus,
+          showCancelButton: true,
+          confirmButtonText: "Update",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(scriptUrl, {
+              method: "POST",
+              body: new URLSearchParams({
+                action: "updateStatus",
+                rowIndex: rowIndex,
+                status: result.value,
+              }),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.status === "success") {
+                  Swal.fire("Berhasil!", res.message, "success");
+                  loadTable();
+                } else {
+                  Swal.fire("Error!", res.message, "error");
+                }
+              })
+              .catch(() =>
+                Swal.fire("Error!", "Gagal mengirim data.", "error")
+              );
+          }
+        });
+      };
 
+      // Fungsi Delete Row
+      window.deleteRow = function (rowIndex) {
+        Swal.fire({
+          title: "Yakin hapus data?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Ya, hapus",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(scriptUrl, {
+              method: "POST",
+              body: new URLSearchParams({
+                action: "delete",
+                rowIndex: rowIndex,
+              }),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.status === "success") {
+                  Swal.fire("Terhapus!", res.message, "success");
+                  loadTable();
+                } else {
+                  Swal.fire("Error!", res.message, "error");
+                }
+              })
+              .catch(() =>
+                Swal.fire("Error!", "Gagal menghapus data.", "error")
+              );
+          }
+        });
+      };
+
+      // Panggil pertama kali
       loadTable();
     </script>
   </body>
