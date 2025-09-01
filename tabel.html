@@ -2,33 +2,29 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tabel Data Order</title>
-
+    <title>Tabel dari Google Sheet</title>
     <!-- Bootstrap CSS -->
     <link
+      rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
     />
-    <!-- DataTables CSS -->
     <link
-      href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
       rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
     />
-
-    <style>
-      /* Hover efek warna info */
-      #orderTable tbody tr:hover {
-        background-color: var(--bs-info) !important;
-        color: white;
-      }
-    </style>
+    <!-- SweetAlert2 CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.min.css"
+    />
   </head>
   <body class="bg-light">
     <div class="container-fluid bg-white">
       <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-3">
         <div class="container">
-          <a class="navbar-brand fw-bold text-primary" href="#">Order Pekerjaan</a>
+          <a class="navbar-brand fw-bold text-primary" href="#"
+            >Order Pekerjaan</a
+          >
           <button
             class="navbar-toggler"
             type="button"
@@ -43,10 +39,33 @@
           <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav ms-auto">
               <li class="nav-item">
-                <a class="nav-link" href="index.html">Home</a>
+                <a class="nav-link active" href="index.html">Home</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link active" href="tabel.html">Tabel</a>
+                <a class="nav-link" href="tabel.html">Tabel</a>
+              </li>
+              <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdownMenuLink"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Lainnya
+                </a>
+                <ul
+                  class="dropdown-menu"
+                  aria-labelledby="navbarDropdownMenuLink"
+                >
+                  <li><a class="dropdown-item" href="#">Action</a></li>
+                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                  <li>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                  </li>
+                </ul>
               </li>
             </ul>
           </div>
@@ -54,84 +73,203 @@
       </nav>
     </div>
 
-    <div class="container py-5">
-      <h3 class="mb-4 text-primary">Tabel Data Order</h3>
+    <div class="container py-4">
       <a href="input.html">
-        <button class="btn btn-primary mb-3">+ Tambah Data</button>
+        <button class="btn btn-primary mb-3">Input Data</button>
       </a>
-      <div class="table-responsive bg-white p-3 rounded shadow-sm">
-        <table
-          id="orderTable"
-          class="table table-striped table-hover table-bordered"
-          style="width: 100%"
+      <h3 class="mb-4">Tabel dari Google Sheet</h3>
+
+      <!-- Loader -->
+      <div id="loader" class="text-center my-5">
+        <div
+          class="spinner-border text-primary"
+          role="status"
+          style="width: 3rem; height: 3rem"
         >
-          <thead class="table-primary">
-            <tr>
-              <th>No</th>
-              <th>Tanggal Order</th>
-              <th>Nama Pengorder</th>
-              <th>Kerusakan</th>
-              <th>Proses</th>
-              <th>Keterangan</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="mt-2">Memuat data...</div>
+      </div>
+
+      <!-- Container tabel -->
+      <div class="table-responsive" style="display: none" id="tableContainer">
+        <table
+          id="sheetTable"
+          class="table table-striped table-bordered"
+          style="width: 100%"
+        ></table>
       </div>
     </div>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.all.min.js"></script>
 
     <script>
-      const scriptURL =
+      const scriptUrl =
         "https://script.google.com/macros/s/AKfycbzxDlf3XELJ77QBrT36Iot9SkIp-MwQaFIINHsa9NNJEQsH8WyCJi9UFrKc6Z93QvY1/exec";
 
-      async function loadData() {
-        try {
-          const res = await fetch(scriptURL);
-          const result = await res.json();
+      function formatDate(dateStr) {
+        if (!dateStr) return "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        return d.toISOString().slice(0, 10);
+      }
 
-          if (result.status === "success") {
-            const data = result.data;
-            const tbody = document.querySelector("#orderTable tbody");
-            tbody.innerHTML = "";
-
-            // looping data (descending: data terbaru di atas)
-            data.reverse().forEach((row, index) => {
-              // row = [tgl_input, tanggal_order, nama_pengorder, kerusakan, proses, keterangan]
-              const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${row[1]}</td>
-                <td>${row[2]}</td>
-                <td>${row[3]}</td>
-                <td>${row[4]}</td>
-                <td>${row[5]}</td>
-              `;
-              tbody.appendChild(tr);
-            });
-
-            // inisialisasi DataTable setelah data dimasukkan
-            $("#orderTable").DataTable({
-              order: [[0, "desc"]], // urut No desc
-              destroy: true, // supaya bisa re-init tanpa error
-              language: {
-                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
-              },
-            });
-          }
-        } catch (err) {
-          console.error("Gagal load data:", err);
+      function statusBadge(status) {
+        if (status === "Selesai") {
+          return '<span class="badge bg-success">Selesai</span>';
+        } else if (status === "Proses") {
+          return '<span class="badge bg-warning text-dark">Proses</span>';
+        } else if (status === "Pending") {
+          return '<span class="badge bg-danger">Pending</span>';
+        } else {
+          return `<span class="badge bg-secondary">${status}</span>`;
         }
       }
 
-      loadData();
+      function showLoader(show) {
+        document.getElementById("loader").style.display = show
+          ? "block"
+          : "none";
+        document.getElementById("tableContainer").style.display = show
+          ? "none"
+          : "block";
+      }
+
+      function loadTable() {
+        showLoader(true);
+        fetch(scriptUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            const header = data[0];
+            const rows = data.slice(1);
+
+            let thead = "<thead><tr>";
+            header.forEach((col) => {
+              thead += `<th>${col}</th>`;
+            });
+            thead += "<th>Action</th></tr></thead>";
+
+            let tbody = "<tbody>";
+            rows.forEach((row, i) => {
+              tbody += "<tr>";
+              row.forEach((cell, idx) => {
+                if (header[idx] === "tanggal_order") {
+                  cell = formatDate(cell);
+                }
+                if (header[idx] === "proses") {
+                  cell = statusBadge(cell);
+                }
+                tbody += `<td>${cell}</td>`;
+              });
+              tbody += `<td>
+                <button class="btn btn-sm btn-info me-2" onclick="editStatus(${
+                  i + 2
+                }, '${row[4]}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteRow(${
+                  i + 2
+                })">Delete</button>
+              </td>`;
+              tbody += "</tr>";
+            });
+            tbody += "</tbody>";
+
+            document.getElementById("sheetTable").innerHTML = thead + tbody;
+
+            $("#sheetTable").DataTable({
+              responsive: true,
+              destroy: true,
+            });
+
+            showLoader(false);
+          })
+          .catch(() => {
+            showLoader(false);
+            Swal.fire("Gagal!", "Tidak bisa memuat data.", "error");
+          });
+      }
+
+      // Fungsi Edit Status
+      window.editStatus = function (rowIndex, currentStatus) {
+        Swal.fire({
+          title: "Update Status",
+          input: "select",
+          inputOptions: {
+            Proses: "Proses",
+            Selesai: "Selesai",
+            Pending: "Pending",
+          },
+          inputValue: currentStatus,
+          showCancelButton: true,
+          confirmButtonText: "Update",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(scriptUrl, {
+              method: "POST",
+              body: new URLSearchParams({
+                action: "updateStatus",
+                rowIndex: rowIndex,
+                status: result.value,
+              }),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.status === "success") {
+                  Swal.fire("Berhasil!", res.message, "success");
+                  loadTable();
+                } else {
+                  Swal.fire("Error!", res.message, "error");
+                }
+              })
+              .catch(() =>
+                Swal.fire("Error!", "Gagal mengirim data.", "error")
+              );
+          }
+        });
+      };
+
+      // Fungsi Delete Row
+      window.deleteRow = function (rowIndex) {
+        Swal.fire({
+          title: "Yakin hapus data?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Ya, hapus",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(scriptUrl, {
+              method: "POST",
+              body: new URLSearchParams({
+                action: "delete",
+                rowIndex: rowIndex,
+              }),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.status === "success") {
+                  Swal.fire("Terhapus!", res.message, "success");
+                  loadTable();
+                } else {
+                  Swal.fire("Error!", res.message, "error");
+                }
+              })
+              .catch(() =>
+                Swal.fire("Error!", "Gagal menghapus data.", "error")
+              );
+          }
+        });
+      };
+
+      // Panggil pertama kali
+      loadTable();
     </script>
   </body>
 </html>
