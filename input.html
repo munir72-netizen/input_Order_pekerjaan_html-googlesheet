@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Input Data Order</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    />
+    <!-- SweetAlert2 CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.min.css"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="container-fluid bg-white">
+      <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-3">
+        <div class="container">
+          <a class="navbar-brand fw-bold text-primary" href="#"
+            >Order Pekerjaan</a
+          >
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNavDropdown"
+            aria-controls="navbarNavDropdown"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item">
+                <a class="nav-link active" href="index.html">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="tabel.html">Tabel</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Pricing</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdownMenuLink"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Lainnya
+                </a>
+                <ul
+                  class="dropdown-menu"
+                  aria-labelledby="navbarDropdownMenuLink"
+                >
+                  <li><a class="dropdown-item" href="#">Action</a></li>
+                  <li><a class="dropdown-item" href="#">Another action</a></li>
+                  <li>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </div>
+    <div class="container py-5">
+      <h3 class="mb-4 text-primary">Form Input Data Order</h3>
+      <a href="tabel.html">
+        <button class="btn btn-primary mb-3">Tabel Data</button>
+      </a>
+      <form id="myForm" class="bg-white p-4 rounded shadow-sm">
+        <div class="mb-3">
+          <label for="tanggal_order" class="form-label">Tanggal Order</label>
+          <input
+            type="date"
+            class="form-control"
+            id="tanggal_order"
+            name="tanggal_order"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="nama_pengorder" class="form-label">Nama Pengorder</label>
+          <input
+            type="text"
+            class="form-control"
+            id="nama_pengorder"
+            name="nama_pengorder"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="kerusakan" class="form-label">Kerusakan</label>
+          <select class="form-select" id="kerusakan" name="kerusakan" required>
+            <option value="">Pilih Kerusakan</option>
+            <option value="Hardware">Hardware</option>
+            <option value="Software">Software</option>
+            <option value="Jaringan">Jaringan</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Proses</label>
+          <div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="proses"
+                id="proses_selesai"
+                value="Selesai"
+                required
+              />
+              <label class="form-check-label" for="proses_selesai"
+                >Selesai</label
+              >
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="proses"
+                id="proses_proses"
+                value="Proses"
+              />
+              <label class="form-check-label" for="proses_proses">Proses</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="proses"
+                id="proses_pending"
+                value="Pending"
+              />
+              <label class="form-check-label" for="proses_pending"
+                >Pending</label
+              >
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="keterangan" class="form-label">Keterangan</label>
+          <textarea
+            class="form-control"
+            id="keterangan"
+            name="keterangan"
+            rows="3"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Kirim</button>
+      </form>
+    </div>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.all.min.js"></script>
+    <script>
+      // Handle submit dengan fetch
+      const scriptURL =
+        "https://script.google.com/macros/s/AKfycbzxDlf3XELJ77QBrT36Iot9SkIp-MwQaFIINHsa9NNJEQsH8WyCJi9UFrKc6Z93QvY1/exec";
+      const form = document.getElementById("myForm");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+
+        fetch(scriptURL, { method: "POST", body: formData })
+          .then((res) => res.text())
+          .then((text) => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (e) {
+              throw new Error("Respon bukan JSON: " + text);
+            }
+
+            if (data.status === "success") {
+              Swal.fire({
+                icon: "success",
+                title: "Berhasil!",
+                text: data.message,
+                confirmButtonColor: "#1e90ff",
+              });
+              form.reset();
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Gagal!",
+                text: "Respon tidak valid dari server.",
+              });
+            }
+          })
+          .catch((err) => {
+            Swal.fire({
+              icon: "error",
+              title: "Gagal!",
+              text: "Terjadi kesalahan koneksi. " + err.message,
+              confirmButtonColor: "#da0808",
+            });
+          });
+      });
+    </script>
+  </body>
+</html>
