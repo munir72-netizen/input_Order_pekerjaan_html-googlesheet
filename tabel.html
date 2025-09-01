@@ -3,11 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <title>Tabel dari Google Sheet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <!-- Bootstrap CSS -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
     />
+    <!-- DataTables CSS -->
     <link
       rel="stylesheet"
       href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
@@ -17,6 +20,18 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.min.css"
     />
+
+    <style>
+      /* warna head saja */
+      #sheetTable thead th {
+        background-color: #0dcaf0; /* bootstrap info */
+        color: #fff;
+      }
+      /* hover biru muda */
+      .table-hover tbody tr:hover {
+        background-color: #cff4fc !important; /* info-subtle */
+      }
+    </style>
   </head>
   <body class="bg-light">
     <div class="container-fluid bg-white">
@@ -49,17 +64,11 @@
                 <a
                   class="nav-link dropdown-toggle"
                   href="#"
-                  id="navbarDropdownMenuLink"
                   role="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
+                  >Lainnya</a
                 >
-                  Lainnya
-                </a>
-                <ul
-                  class="dropdown-menu"
-                  aria-labelledby="navbarDropdownMenuLink"
-                >
+                <ul class="dropdown-menu">
                   <li><a class="dropdown-item" href="#">Action</a></li>
                   <li><a class="dropdown-item" href="#">Another action</a></li>
                   <li>
@@ -74,15 +83,54 @@
     </div>
 
     <div class="container py-4">
-      <a href="input.html">
-        <button class="btn btn-primary mb-3">Input Data</button>
-      </a>
+      <a href="input.html"
+        ><button class="btn btn-primary mb-3">Input Data</button></a
+      >
       <h3 class="mb-4">Tabel dari Google Sheet</h3>
 
+      <!--cart total-->
+      <!-- Cards -->
+      <div class="row my-3">
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-1">Total Data</h6>
+              <h4 class="fw-bold text-primary" id="totalData">0</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-1">Selesai</h6>
+              <h4 class="fw-bold text-success" id="totalSelesai">0</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-1">Proses</h6>
+              <h4 class="fw-bold text-warning" id="totalProses">0</h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+          <div class="card shadow-sm border-0">
+            <div class="card-body text-center">
+              <h6 class="text-muted mb-1">Pending</h6>
+              <h4 class="fw-bold text-danger" id="totalPending">0</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- end card total-->
+      <div class="container bg-white shadow-sm rounded"></div>
       <!-- Loader -->
-      <div id="loader" class="text-center my-5">
+      <div id="loader" class="text-center my-5" style="display: none">
         <div
-          class="spinner-border text-primary"
+          class="spinner-border text-info"
           role="status"
           style="width: 3rem; height: 3rem"
         >
@@ -91,11 +139,11 @@
         <div class="mt-2">Memuat data...</div>
       </div>
 
-      <!-- Container tabel -->
-      <div class="table-responsive"  id="tableContainer">
+      <!-- Tabel -->
+      <div class="table-responsive" id="tableContainer">
         <table
           id="sheetTable"
-          class="table table-striped table-bordered table-hover"
+          class="table table-hover table-bordered align-middle"
           style="width: 100%"
         ></table>
       </div>
@@ -103,7 +151,7 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -124,15 +172,13 @@
       }
 
       function statusBadge(status) {
-        if (status === "Selesai") {
+        if (status === "Selesai")
           return '<span class="badge bg-success">Selesai</span>';
-        } else if (status === "Proses") {
+        if (status === "Proses")
           return '<span class="badge bg-warning text-dark">Proses</span>';
-        } else if (status === "Pending") {
+        if (status === "Pending")
           return '<span class="badge bg-danger">Pending</span>';
-        } else {
-          return `<span class="badge bg-secondary">${status}</span>`;
-        }
+        return `<span class="badge bg-secondary">${status ?? ""}</span>`;
       }
 
       function showLoader(show) {
@@ -144,61 +190,101 @@
           : "block";
       }
 
+      // amankan nilai untuk atribut HTML
+      function encodeAttr(val) {
+        return String(val ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
       function loadTable() {
         showLoader(true);
         fetch(scriptUrl)
-          .then((response) => response.json())
+          .then((r) => r.json())
           .then((data) => {
-            const header = data[0];
-            const rows = data.slice(1);
+            const rows = data.slice(1); // buang header sheet
 
-            let thead = "<thead><tr>";
-            header.forEach((col) => {
-              thead += `<th>${col}</th>`;
-            });
-            thead += "<th>Action</th></tr></thead>";
+            // THEAD (fixed dan tidak menampilkan kolom pertama/tanggal_input)
+            const thead = `
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Tanggal Order</th>
+                  <th>Nama Pengorder</th>
+                  <th>Kerusakan</th>
+                  <th>Proses</th>
+                  <th>Keterangan</th>
+                  <th>Action</th>
+                </tr>
+              </thead>`;
 
+            // TBODY — ambil data dari indeks: 1..5 (skip index 0 = tanggal_input)
             let tbody = "<tbody>";
             rows.forEach((row, i) => {
-              tbody += "<tr>";
-              row.forEach((cell, idx) => {
-                if (header[idx] === "tanggal_order") {
-                  cell = formatDate(cell);
-                }
-                if (header[idx] === "proses") {
-                  cell = statusBadge(cell);
-                }
-                tbody += `<td>${cell}</td>`;
-              });
-              tbody += `<td>
-                <button class="btn btn-sm btn-info me-2" onclick="editStatus(${
-                  i + 2
-                }, '${row[4]}')">Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteRow(${
-                  i + 2
-                })">Delete</button>
-              </td>`;
-              tbody += "</tr>";
+              const no = i + 1;
+              const tanggal_order = formatDate(row[1] ?? "");
+              const nama_pengorder = row[2] ?? "";
+              const kerusakan = row[3] ?? "";
+              const prosesRaw = String(row[4] ?? "");
+              const keterangan = row[5] ?? "";
+              const proses = statusBadge(prosesRaw);
+              const sheetRowIndex = i + 2; // baris sebenarnya di Sheet (karena baris 1 = header)
+
+              tbody += `
+                <tr>
+                  <td class="text-center">${no}</td>
+                  <td>${tanggal_order}</td>
+                  <td>${nama_pengorder}</td>
+                  <td>${kerusakan}</td>
+                  <td class="text-center">${proses}</td>
+                  <td>${keterangan}</td>
+                  <td class="text-center">
+                    <button type="button"
+                            class="btn btn-sm btn-info text-white me-2 btn-edit"
+                            data-row="${sheetRowIndex}"
+                            data-status="${encodeAttr(prosesRaw)}">Edit</button>
+                    <button type="button"
+                            class="btn btn-sm btn-danger btn-delete"
+                            data-row="${sheetRowIndex}">Delete</button>
+                  </td>
+                </tr>`;
             });
             tbody += "</tbody>";
 
-            document.getElementById("sheetTable").innerHTML = thead + tbody;
+            const tableEl = document.getElementById("sheetTable");
+            tableEl.innerHTML = thead + tbody;
 
+            // Inisialisasi DataTables (DESC kolom No, kolom Action non-orderable)
             $("#sheetTable").DataTable({
               responsive: true,
               destroy: true,
+              order: [[0, "desc"]],
+              columnDefs: [
+                { targets: -1, orderable: false, searchable: false },
+              ],
+              language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
+              },
             });
 
             showLoader(false);
           })
-          .catch(() => {
+          .catch((err) => {
+            console.error(err);
             showLoader(false);
             Swal.fire("Gagal!", "Tidak bisa memuat data.", "error");
           });
       }
 
-      // Fungsi Edit Status
-      window.editStatus = function (rowIndex, currentStatus) {
+      // ====== EVENT DELEGATION: tombol Edit / Delete ======
+      // Edit Status
+      $(document).on("click", ".btn-edit", function () {
+        const rowIndex = this.dataset.row;
+        const currentStatus = this.dataset.status || "";
+
         Swal.fire({
           title: "Update Status",
           input: "select",
@@ -234,10 +320,12 @@
               );
           }
         });
-      };
+      });
 
-      // Fungsi Delete Row
-      window.deleteRow = function (rowIndex) {
+      // Delete Row
+      $(document).on("click", ".btn-delete", function () {
+        const rowIndex = this.dataset.row;
+
         Swal.fire({
           title: "Yakin hapus data?",
           icon: "warning",
@@ -266,9 +354,105 @@
               );
           }
         });
-      };
+      });
 
-      // Panggil pertama kali
+      function loadTable() {
+        showLoader(true);
+        fetch(scriptUrl)
+          .then((r) => r.json())
+          .then((data) => {
+            const rows = data.slice(1); // buang header sheet
+
+            // === Hitung jumlah total dan status ===
+            const total = rows.length;
+            let selesai = 0,
+              proses = 0,
+              pending = 0;
+
+            rows.forEach((row) => {
+              const status = (row[4] || "").toLowerCase(); // ambil kolom proses
+              if (status === "selesai") selesai++;
+              else if (status === "proses") proses++;
+              else if (status === "pending") pending++;
+            });
+
+            // update isi card
+            document.getElementById("totalData").textContent = total;
+            document.getElementById("totalSelesai").textContent = selesai;
+            document.getElementById("totalProses").textContent = proses;
+            document.getElementById("totalPending").textContent = pending;
+
+            // === bikin tabel ===
+            const thead = `
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal Order</th>
+            <th>Nama Pengorder</th>
+            <th>Kerusakan</th>
+            <th>Proses</th>
+            <th>Keterangan</th>
+            <th>Action</th>
+          </tr>
+        </thead>`;
+
+            let tbody = "<tbody>";
+            rows.forEach((row, i) => {
+              const no = i + 1;
+              const tanggal_order = formatDate(row[1] ?? "");
+              const nama_pengorder = row[2] ?? "";
+              const kerusakan = row[3] ?? "";
+              const prosesRaw = String(row[4] ?? "");
+              const keterangan = row[5] ?? "";
+              const proses = statusBadge(prosesRaw);
+              const sheetRowIndex = i + 2;
+
+              tbody += `
+          <tr>
+            <td class="text-center">${no}</td>
+            <td>${tanggal_order}</td>
+            <td>${nama_pengorder}</td>
+            <td>${kerusakan}</td>
+            <td class="text-center">${proses}</td>
+            <td>${keterangan}</td>
+            <td class="text-center">
+              <button type="button"
+                      class="btn btn-sm btn-info text-white me-2 btn-edit"
+                      data-row="${sheetRowIndex}"
+                      data-status="${encodeAttr(prosesRaw)}">Edit</button>
+              <button type="button"
+                      class="btn btn-sm btn-danger btn-delete"
+                      data-row="${sheetRowIndex}">Delete</button>
+            </td>
+          </tr>`;
+            });
+            tbody += "</tbody>";
+
+            const tableEl = document.getElementById("sheetTable");
+            tableEl.innerHTML = thead + tbody;
+
+            $("#sheetTable").DataTable({
+              responsive: true,
+              destroy: true,
+              order: [[0, "desc"]],
+              columnDefs: [
+                { targets: -1, orderable: false, searchable: false },
+              ],
+              language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
+              },
+            });
+
+            showLoader(false);
+          })
+          .catch((err) => {
+            console.error(err);
+            showLoader(false);
+            Swal.fire("Gagal!", "Tidak bisa memuat data.", "error");
+          });
+      }
+
+      // Load pertama kali
       loadTable();
     </script>
   </body>
